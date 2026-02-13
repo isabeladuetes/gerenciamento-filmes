@@ -1,5 +1,7 @@
 import prisma from '../utils/prismaClient.js';
 
+
+
 export const create = async (data) => {
     return await prisma.filme.create({ data });
 };

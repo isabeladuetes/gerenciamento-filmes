@@ -222,7 +222,7 @@ export const update = async (req, res) => {
 
         // Não é permitido cadastrar filmes com título duplicado
         if (titulo) {
-            const outro = await model.findByTitle(titulo);
+            const outro = await model.findById(id);
             if (outro && outro.id !== parseInt(id)) {
                 return res.status(409).json({
                     error: 'Não é permitido cadastrar filmes com título duplicado.',
@@ -230,17 +230,17 @@ export const update = async (req, res) => {
             }
         }
 
-        const data = await model.update({
-            titulo,
-            descricao,
-            duracao: parseInt(duracao),
-            genero,
-            nota: parseFloat(nota),
-            disponibilidade: true,
-        });
+    const updatedData = await model.update(id, {
+    titulo,
+    descricao,
+    duracao: parseInt(duracao),
+    genero,
+    nota: parseFloat(nota),
+        
+});
         res.json({
-            message: `Filme "${data.titulo}" atualizado com sucesso!`,
-            data,
+            message: `Filme "${updatedData.titulo}" atualizado com sucesso!`,
+            data: updatedData,
         });
     } catch (error) {
         console.error('Erro ao atualizar:', error);

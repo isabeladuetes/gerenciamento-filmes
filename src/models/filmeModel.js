@@ -6,10 +6,10 @@ export const create = async (data) => {
 
 // Filtros
 export const findAll = async (filters = {}) => {
-    const { nome, descricao, duracao, genero, nota, disponibilidade } = filters;
+    const { titulo, descricao, duracao, genero, nota, disponibilidade } = filters;
     const where = {};
 
-    if (nome) where.nome = { contains: nome, mode: 'insensitive' };
+    if (titulo) where.titulo = { contains: titulo, mode: 'insensitive' };
     if (descricao) where.descricao = { contains: descricao, mode: 'insensitive' };
     if (genero) where.genero = { contains: genero, mode: 'insensitive' };
     if (duracao !== undefined) where.duracao = parseInt(duracao);

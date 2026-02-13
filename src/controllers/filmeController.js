@@ -46,14 +46,14 @@ export const create = async (req, res) => {
             });
         }
 
-        const { nome, descricao, duracao, genero, nota, disponibilidade } = req.body;
+        const { titulo, descricao, duracao, genero, nota, disponibilidade } = req.body;
 
         // Regras de negócio
-        
+
         // Nome: mínimo 3 caracteres
-        if (!nome || typeof nome !== 'string' || nome.trim().length < 3) {
+        if (!titulo || typeof titulo !== 'string' || titulo.trim().length < 3) {
             return res.status(400).json({
-                error: 'O nome é obrigatório e deve ter no mínimo 3 caracteres.',
+                error: 'O título é obrigatório e deve ter no mínimo 3 caracteres.',
             });
         }
 
@@ -106,7 +106,7 @@ export const create = async (req, res) => {
         }
 
         // Não é permitido cadastrar filmes com título duplicado
-        const existe = await model.findByTitle(nome);
+        const existe = await model.findByTitle(titulo);
         if (existe) {
             return res.status(409).json({
                 error: 'Não é permitido cadastrar filmes com título duplicado.',
@@ -115,7 +115,7 @@ export const create = async (req, res) => {
 
         // Todo filme deve ser criado com available = true
         const data = await model.create({
-            nome,
+            titulo,
             descricao,
             duracao: parseInt(duracao),
             genero,
@@ -151,6 +151,8 @@ export const update = async (req, res) => {
             return res.status(404).json({ error: 'Filme não encontrado para atualizar.' });
         }
 
+        const { titulo, descricao, duracao, genero, nota, disponibilidade } = req.body;
+
         // Regras de negócio
 
         //Filmes com available = false não podem ser atualizados
@@ -159,11 +161,11 @@ export const update = async (req, res) => {
                 error: 'Filmes com available igual a falso não podem ser atualizados.',
             });
         }
-        
+
         // Nome: mínimo 3 caracteres
-        if (!nome || typeof nome !== 'string' || nome.trim().length < 3) {
+        if (!titulo || typeof titulo !== 'string' || titulo.trim().length < 3) {
             return res.status(400).json({
-                error: 'O nome é obrigatório e deve ter no mínimo 3 caracteres.',
+                error: 'O título é obrigatório e deve ter no mínimo 3 caracteres.',
             });
         }
 
@@ -175,18 +177,19 @@ export const update = async (req, res) => {
         }
 
         // Duração: número inteiro positivo
-        const tempo = parseInt(duracao);
-        if (isNaN(tempo) || tempo <= 0) {
-            return res.status(400).json({
-                error: 'A duração precisa ser um número inteiro e positivo.',
-            });
-        }
-
-        // Superior a 300 minutos não podem ser cadastrados
-        if (tempo > 300) {
-            return res.status(400).json({
-                error: 'Filmes com duração superior a 300 minutos não podem ser cadastrados.',
-            });
+        if (duracao !== undefined) {
+            const tempo = parseInt(duracao);
+            if (isNaN(tempo) || tempo <= 0) {
+                return res
+                    .status(400)
+                    .json({ error: 'A duração deve ser um número inteiro e positivo.' });
+            }
+            // Superior a 300 minutos não podem ser cadastrados
+            if (tempo > 300) {
+                return res.status(400).json({
+                    error: 'Filmes com duração maior que 300 minutos não podem ser cadastrados.',
+                });
+            }
         }
 
         // Gênero deve ser um dos valores específicos
@@ -208,29 +211,42 @@ export const update = async (req, res) => {
         }
 
         // Nota deve estar entre 0 e 10
-        const avaliacao = parseFloat(nota);
-        if (isNaN(avaliacao) || avaliacao < 0 || avaliacao > 10) {
-            return res.status(400).json({
-                error: 'A nota (nota) precisa estar entre 0 e 10.',
-            });
+        if (nota !== undefined) {
+            const avaliacao = parseFloat(nota);
+            if (isNaN(avaliacao) || avaliacao < 0 || avaliacao > 10) {
+                return res.status(400).json({
+                    error: 'A nota (nota) deve estar entre 0 e 10.',
+                });
+            }
         }
 
         // Não é permitido cadastrar filmes com título duplicado
-        const existe = await model.findByTitle(nome);
-        if (existe) {
-            return res.status(409).json({
-                error: 'Não é permitido cadastrar filmes com título duplicado.',
-            });
+        if (titulo) {
+            const outro = await model.findByTitle(titulo);
+            if (outro && outro.id !== parseInt(id)) {
+                return res.status(409).json({
+                    error: 'Não é permitido cadastrar filmes com título duplicado.',
+                });
+            }
         }
 
-        const data = await model.update(id, req.body);
+        const data = await model.update({
+            titulo,
+            descricao,
+            duracao: parseInt(duracao),
+            genero,
+            nota: parseFloat(nota),
+            disponibilidade: true,
+        });
         res.json({
-            message: `O Filme "${data.nome}" foi atualizado com sucesso!`,
+            message: `Filme "${data.titulo}" atualizado com sucesso!`,
             data,
         });
     } catch (error) {
         console.error('Erro ao atualizar:', error);
-        res.status(500).json({ error: 'Erro ao atualizar filme' });
+        res.status(500).json({
+            error: 'Erro interno no servidor ao atualizar o filme.',
+        });
     }
 };
 
@@ -255,7 +271,7 @@ export const remove = async (req, res) => {
 
         await model.remove(id);
         res.json({
-            message: `O filme "${exists.nome}" foi deletado com sucesso!`,
+            message: `O filme "${exists.titulo}" foi deletado com sucesso!`,
             deletado: exists,
         });
     } catch (error) {
